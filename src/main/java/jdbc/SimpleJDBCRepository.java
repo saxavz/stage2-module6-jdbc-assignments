@@ -12,10 +12,15 @@ import java.util.*;
 
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class SimpleJDBCRepository {
     public static final String USER_TABLE_NAME = "PUBLIC.MYUSERS";
 
-    private final Connection connection;
+
+    private Connection connection = null;
+    private PreparedStatement ps = null;
+    private Statement st = null;
 
 
     private static final String createUserSQL = "INSERT INTO " + USER_TABLE_NAME + "(firstname,lastname,age) values(?,?,?) RETURNING id";
