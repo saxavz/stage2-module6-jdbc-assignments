@@ -34,14 +34,12 @@ public class SimpleJDBCRepository {
         this.connection = connection;
     }
 
-    public Long createUser() {
-
+    public Long createUser(User u) {
         long retVal = 0;
-        Random r = new Random();
         try(PreparedStatement ps = connection.prepareStatement(createUserSQL)){
-            ps.setString(1,"Name_" + Math.abs(r.nextInt()));
-            ps.setString(2,"Surname_" + Math.abs(r.nextInt()));
-            ps.setInt(3,Math.abs(r.nextInt())%99);
+            ps.setString(1,u.getFirstName());
+            ps.setString(2,u.getLastName());
+            ps.setInt(3,u.getAge());
             ResultSet rs = ps.executeQuery();
 
             retVal = rs.next() ? rs.getLong(1) : -1L;
@@ -116,13 +114,12 @@ public class SimpleJDBCRepository {
         return ret;
     }
 
-    public User updateUser() {
-        User u = new User();
+    public User updateUser(User u) {
         try(PreparedStatement ps = connection.prepareStatement(updateUserSQL)){
-            ps.setString(1,"updated");
-            ps.setString(2,"updated");
-            ps.setInt(3,0);
-            ps.setLong(4,1); //id
+            ps.setString(1,u.getFirstName());
+            ps.setString(2,u.getLastName());
+            ps.setInt(3,u.getAge());
+            ps.setLong(4,u.getId()); //id
 
             ResultSet rs = ps.executeQuery();
 
@@ -142,7 +139,7 @@ public class SimpleJDBCRepository {
         return u;
     }
 
-    private void deleteUser(Long userId) {
+    public void deleteUser(Long userId) {
         try(PreparedStatement ps = connection.prepareStatement(deleteUser)){
             ps.setLong(1,userId);
             ps.execute();
