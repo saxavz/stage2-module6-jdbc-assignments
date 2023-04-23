@@ -1,17 +1,18 @@
 package jdbc;
 
 import javax.sql.DataSource;
+
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.Connection;
-import java.sql.ConnectionBuilder;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
+import java.sql.*;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.logging.Logger;
@@ -19,9 +20,8 @@ import java.util.logging.Logger;
 @Getter
 @Setter
 public class CustomDataSource implements DataSource {
-    private static volatile CustomDataSource instance;
+    private static volatile DataSource instance;
 
-    private final CustomConnector dbConnector;
     private final String driver;
     private final String url;
     private final String name;
@@ -32,7 +32,6 @@ public class CustomDataSource implements DataSource {
         this.url = url;
         this.password = password;
         this.name = name;
-        this.dbConnector = new CustomConnector(driver, url, password, name);
         //initDb();
     }
 
@@ -47,14 +46,16 @@ public class CustomDataSource implements DataSource {
             throw new RuntimeException(e);
         }
 
-        try(Connection conn = this.dbConnector.getConnection(this.url)){
-            conn.prepareStatement(initSqlScript).execute();
+        try(Connection conn = this.getConnection();
+            PreparedStatement ps = conn.prepareStatement(initSqlScript))
+        {
+            ps.execute();
         } catch (SQLException e){
             throw new RuntimeException("Something went wrong during dbInit phase", e);
         }
     }
 
-    public static CustomDataSource getInstance() {
+    public static DataSource getInstance() {
         if(Objects.isNull(instance)){
             synchronized (CustomDataSource.class){
                 Properties props = PropertyLoader.loadProperties();
@@ -64,19 +65,24 @@ public class CustomDataSource implements DataSource {
                                                 props.getProperty("postgres.password"),
                                                 props.getProperty("postgres.name")
                 );
+
+//                instance = new EmbeddedDatabaseBuilder()
+//                            .setType(EmbeddedDatabaseType.H2)
+//                            .addScript("./INIT_DB.sql")
+//                            .build();
+                }
             }
-        }
-        return instance;
+                return instance;
     }
 
     @Override
     public Connection getConnection() throws SQLException {
-        return dbConnector.getConnection(this.url);
+        return  DriverManager.getConnection(this.url, this.name, this.password);
     }
 
     @Override
     public Connection getConnection(String username, String password) throws SQLException {
-        return dbConnector.getConnection(this.url, this.name, this.password);
+        return  DriverManager.getConnection(this.url, username, password);
     }
 
     @Override

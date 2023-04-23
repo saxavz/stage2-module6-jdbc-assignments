@@ -23,26 +23,23 @@ public class SimpleJDBCRepository {
     private Statement st = null;
 
 
-    private static final String createUserSQL = "INSERT INTO " + USER_TABLE_NAME + "(firstname,lastname,age) values(?,?,?) RETURNING id";
-    private static final String updateUserSQL = "UPDATE " + USER_TABLE_NAME + " SET firstname = ?, lastname = ?, age = ? where id = ? RETURNING id,firstname,lastname,age";
+    private static final String createUserSQL = "INSERT INTO " + USER_TABLE_NAME + "(firstname,lastname,age) values(?,?,?)";
+    private static final String updateUserSQL = "UPDATE " + USER_TABLE_NAME + " SET firstname = ?, lastname = ?, age = ? where id = ?";
     private static final String deleteUser = "DELETE FROM " + USER_TABLE_NAME + " where id = ?";
     private static final String findUserByIdSQL = "SELECT firstname,lastname,age from " + USER_TABLE_NAME + " where id = ?";
     private static final String findUserByNameSQL = "SELECT id,firstname,lastname,age from " + USER_TABLE_NAME + " where firstname = ?";;
     private static final String findAllUserSQL = "SELECT id,firstname,lastname,age from " + USER_TABLE_NAME;
 
-    public SimpleJDBCRepository(Connection connection) {
-        this.connection = connection;
-    }
-
     public Long createUser(User u) {
         long retVal = 0;
-        try(PreparedStatement ps = connection.prepareStatement(createUserSQL)){
+        try(PreparedStatement ps = connection.prepareStatement(createUserSQL, Statement.RETURN_GENERATED_KEYS)){
             ps.setString(1,u.getFirstName());
             ps.setString(2,u.getLastName());
             ps.setInt(3,u.getAge());
-            ResultSet rs = ps.executeQuery();
+            ps.executeUpdate();
 
-            retVal = rs.next() ? rs.getLong(1) : -1L;
+            ResultSet rs = ps.getGeneratedKeys();
+            retVal = (rs != null && rs.next()) ? rs.getLong(1) : -1L;
 
         } catch (SQLException e){
             throw new RuntimeException("Problem occurred on user insert ", e);
@@ -119,16 +116,9 @@ public class SimpleJDBCRepository {
             ps.setString(1,u.getFirstName());
             ps.setString(2,u.getLastName());
             ps.setInt(3,u.getAge());
-            ps.setLong(4,u.getId()); //id
+            ps.setLong(4,u.getId());
 
-            ResultSet rs = ps.executeQuery();
-
-            if(rs.next()){
-                u.setId(rs.getLong(1));
-                u.setFirstName(rs.getString(2));
-                u.setLastName(rs.getString(3));
-                u.setAge(rs.getInt(4));
-            } else {
+            if(ps.executeUpdate() == 0){
                 throw new SQLException("No data found");
             }
 

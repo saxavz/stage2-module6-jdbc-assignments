@@ -25,4 +25,6 @@ public class CustomConnector {
     public Connection getConnection(String url, String user, String password) throws SQLException {
         return DriverManager.getConnection(url, user, password);
     }
+
+
 }
