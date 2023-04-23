@@ -33,7 +33,7 @@ public class CustomDataSource implements DataSource {
         this.password = password;
         this.name = name;
         this.dbConnector = new CustomConnector(driver, url, password, name);
-        initDb();
+        //initDb();
     }
 
     private void initDb(){
